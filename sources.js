@@ -1,43 +1,38 @@
 import axios from "axios";
 
 /**
- * SAFE + SMART BD SIGNAL SCORING
- * (prevents crashes + improves intelligence quality)
+ * SAFE BD SIGNAL SCORER
  */
 function scoreItem(text) {
   if (!text || typeof text !== "string") return 0;
 
   const t = text.toLowerCase();
 
-  // 🧠 REAL-WORLD BD / VC / STARTUP SIGNAL KEYWORDS
   const keywords = [
-    // Funding signals (VERY HIGH VALUE)
+    // Funding signals (highest value)
     "raised",
     "funding",
     "seed",
-    "pre-seed",
     "series a",
     "series b",
     "series c",
     "investment",
     "backed",
     "venture",
-    "round",
 
     // Growth signals
     "launch",
     "beta",
     "waitlist",
     "growth",
-    "users",
     "traction",
     "scale",
-    "expansion",
+    "users",
 
     // Partnership signals
     "partnership",
-    "collaboration",
     "integration",
+    "collaboration",
     "ecosystem",
     "strategic",
 
@@ -45,23 +40,19 @@ function scoreItem(text) {
     "api",
     "platform",
     "protocol",
-    "infrastructure",
-    "tool",
-    "developer",
     "sdk",
+    "developer",
 
-    // AI / Tech trend signals (high BD relevance now)
+    // AI signals (very important now)
     "ai",
     "agent",
     "automation",
     "llm",
-    "machine learning",
     "openai",
-    "model",
 
     // Market signals
-    "acquired",
     "acquisition",
+    "acquired",
     "valuation",
     "startup",
     "unicorn"
@@ -70,16 +61,14 @@ function scoreItem(text) {
   let score = 0;
 
   for (const k of keywords) {
-    if (t.includes(k)) {
-      score++;
-    }
+    if (t.includes(k)) score++;
   }
 
   return score;
 }
 
 /**
- * 🔥 HACKER NEWS (most stable BD signal source)
+ * ONLY RELIABLE SOURCE (NO RSS, NO BREAKING APIs)
  */
 export async function fetchHackerNews() {
   const res = await axios.get(
