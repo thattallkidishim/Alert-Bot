@@ -1,8 +1,8 @@
 const seen = new Set();
 
 export function filterNew(items) {
-  return items.filter(item => {
-    const key = item.title + item.url;
+  return items.filter(i => {
+    const key = i.title + i.url;
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
