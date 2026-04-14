@@ -2,8 +2,12 @@ import "dotenv/config";
 import TelegramBot from "node-telegram-bot-api";
 import express from "express";
 
-import { fetchHackerNews, fetchProductHunt } from "./sources.js";
-import { filterNew } from "./utils.js";
+import {
+  fetchHackerNews,
+  fetchProductHunt,
+  fetchDevTo,
+  fetchReddit
+} from "./sources.js";
 
 const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, {
   polling: false
@@ -11,31 +15,58 @@ const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, {
 
 const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
-// keep Railway alive
+// keep alive (Railway)
 const app = express();
-app.get("/", (req, res) => res.send("BD Bot Running"));
+app.get("/", (req, res) => res.send("BD Intelligence Bot Running"));
 app.listen(process.env.PORT || 3000);
 
-// send message
+// prevent spam duplicates
+const seen = new Set();
+
+function classify(score) {
+  if (score >= 3) return "🔥 HOT";
+  if (score >= 1) return "⚡ WARM";
+  return "💤 LOW";
+}
+
 function send(item) {
-  bot.sendMessage(
-    CHAT_ID,
-    `🚀 NEW SIGNAL\n\n${item.title}\n${item.url}\n\nSource: ${item.source}`
-  );
+  if (seen.has(item.title)) return;
+  seen.add(item.title);
+
+  if (item.score < 1) return; // filter noise
+
+  const msg = `
+🚀 BD SIGNAL (${classify(item.score)})
+
+📌 ${item.title}
+📊 Source: ${item.source}
+📈 Score: ${item.score}/5
+
+🔗 ${item.url}
+`;
+
+  bot.sendMessage(CHAT_ID, msg);
 }
 
-// main scan
+// main scan loop
 async function scan() {
-  const hn = await fetchHackerNews();
-  const ph = await fetchProductHunt();
+  try {
+    const data = await Promise.all([
+      fetchHackerNews(),
+      fetchProductHunt(),
+      fetchDevTo(),
+      fetchReddit()
+    ]);
 
-  const all = [...hn, ...ph];
-  const fresh = filterNew(all);
+    const all = data.flat();
+    all.forEach(send);
 
-  fresh.forEach(send);
+  } catch (err) {
+    console.error("Scan error:", err.message);
+  }
 }
 
-setInterval(scan, 5 * 60 * 1000);
+setInterval(scan, 4 * 60 * 1000);
 
-console.log("Bot running...");
+console.log("BD Intelligence Bot Running...");
 scan();
