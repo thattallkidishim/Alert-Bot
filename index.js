@@ -2,12 +2,7 @@ import "dotenv/config";
 import TelegramBot from "node-telegram-bot-api";
 import express from "express";
 
-import {
-  fetchHackerNews,
-  fetchProductHunt,
-  fetchCrypto
-} from "./sources.js";
-
+import { fetchHackerNews, fetchProductHunt } from "./sources.js";
 import { filterNew } from "./utils.js";
 
 const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, {
@@ -18,41 +13,29 @@ const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
 // keep Railway alive
 const app = express();
-app.get("/", (req, res) => res.send("BD Alert Bot Running"));
+app.get("/", (req, res) => res.send("BD Bot Running"));
 app.listen(process.env.PORT || 3000);
 
-// send message helper
+// send message
 function send(item) {
-  const message = `
-🚀 NEW SIGNAL DETECTED
-
-📌 ${item.title}
-🔗 ${item.url}
-📊 Source: ${item.source}
-`;
-
-  bot.sendMessage(CHAT_ID, message);
+  bot.sendMessage(
+    CHAT_ID,
+    `🚀 NEW SIGNAL\n\n${item.title}\n${item.url}\n\nSource: ${item.source}`
+  );
 }
 
-// main loop
+// main scan
 async function scan() {
-  try {
-    const hn = await fetchHackerNews();
-    const ph = await fetchProductHunt();
-    const crypto = await fetchCrypto();
+  const hn = await fetchHackerNews();
+  const ph = await fetchProductHunt();
 
-    const all = [...hn, ...ph, ...crypto];
-    const fresh = filterNew(all);
+  const all = [...hn, ...ph];
+  const fresh = filterNew(all);
 
-    fresh.forEach(send);
-
-  } catch (err) {
-    console.error("Scan error:", err.message);
-  }
+  fresh.forEach(send);
 }
 
-// run every 5 minutes
 setInterval(scan, 5 * 60 * 1000);
 
-console.log("BD Alert Bot is running...");
+console.log("Bot running...");
 scan();
