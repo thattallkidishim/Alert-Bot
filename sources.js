@@ -1,81 +1,95 @@
 import axios from "axios";
-import Parser from "rss-parser";
 
-const parser = new Parser();
-
-// keyword scoring engine
+/**
+ * SAFE + SMART BD SIGNAL SCORING
+ * (prevents crashes + improves intelligence quality)
+ */
 function scoreItem(text) {
+  if (!text || typeof text !== "string") return 0;
+
+  const t = text.toLowerCase();
+
+  // 🧠 REAL-WORLD BD / VC / STARTUP SIGNAL KEYWORDS
   const keywords = [
-    "startup",
-    "launch",
+    // Funding signals (VERY HIGH VALUE)
+    "raised",
     "funding",
-    "partnership",
-    "ecosystem",
-    "AI",
-    "API",
+    "seed",
+    "pre-seed",
+    "series a",
+    "series b",
+    "series c",
+    "investment",
+    "backed",
+    "venture",
+    "round",
+
+    // Growth signals
+    "launch",
+    "beta",
+    "waitlist",
     "growth",
-    "raises",
-    "seed"
+    "users",
+    "traction",
+    "scale",
+    "expansion",
+
+    // Partnership signals
+    "partnership",
+    "collaboration",
+    "integration",
+    "ecosystem",
+    "strategic",
+
+    // Product signals
+    "api",
+    "platform",
+    "protocol",
+    "infrastructure",
+    "tool",
+    "developer",
+    "sdk",
+
+    // AI / Tech trend signals (high BD relevance now)
+    "ai",
+    "agent",
+    "automation",
+    "llm",
+    "machine learning",
+    "openai",
+    "model",
+
+    // Market signals
+    "acquired",
+    "acquisition",
+    "valuation",
+    "startup",
+    "unicorn"
   ];
 
   let score = 0;
-  const lower = text.toLowerCase();
 
-  keywords.forEach(k => {
-    if (lower.includes(k)) score++;
-  });
+  for (const k of keywords) {
+    if (t.includes(k)) {
+      score++;
+    }
+  }
 
   return score;
 }
 
-// Hacker News
+/**
+ * 🔥 HACKER NEWS (most stable BD signal source)
+ */
 export async function fetchHackerNews() {
   const res = await axios.get(
     "https://hn.algolia.com/api/v1/search_by_date?query=startup"
   );
 
   return res.data.hits.map(p => ({
-    title: p.title,
+    title: p.title || "",
     url: p.url || `https://news.ycombinator.com/item?id=${p.objectID}`,
     source: "Hacker News",
-    score: scoreItem(p.title)
-  }));
-}
-
-// Product Hunt
-export async function fetchProductHunt() {
-  const feed = await parser.parseURL("https://www.producthunt.com/feed");
-
-  return feed.items.map(i => ({
-    title: i.title,
-    url: i.link,
-    source: "Product Hunt",
-    score: scoreItem(i.title)
-  }));
-}
-
-// Dev.to (startup/dev signals)
-export async function fetchDevTo() {
-  const res = await axios.get("https://dev.to/api/articles?per_page=20");
-
-  return res.data.map(a => ({
-    title: a.title,
-    url: a.url,
-    source: "Dev.to",
-    score: scoreItem(a.title)
-  }));
-}
-
-// Reddit (startup signal feed)
-export async function fetchReddit() {
-  const res = await axios.get(
-    "https://www.reddit.com/r/startups/new.json?limit=10"
-  );
-
-  return res.data.data.children.map(post => ({
-    title: post.data.title,
-    url: "https://reddit.com" + post.data.permalink,
-    source: "Reddit",
-    score: scoreItem(post.data.title)
+    score: scoreItem(p.title || "")
   }));
 }
