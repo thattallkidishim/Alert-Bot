@@ -12,42 +12,71 @@ const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, {
 const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
 /**
- * KEEP RAILWAY ALIVE
+ * KEEP ALIVE
  */
 const app = express();
-app.get("/", (req, res) => res.send("BD Intelligence Bot Running"));
+app.get("/", (req, res) => res.send("BD Intelligence Agent Running"));
 app.listen(process.env.PORT || 3000);
 
 /**
- * CLASSIFY SIGNAL STRENGTH
+ * PRIORITY SYSTEM
  */
-function classify(score) {
-  if (score >= 3) return "🔥 HOT";
-  if (score >= 1) return "⚡ WARM";
-  return "💤 LOW";
+function priority(score) {
+  if (score >= 10) return "P0 (URGENT)";
+  if (score >= 6) return "P1 (HIGH)";
+  if (score >= 3) return "P2 (WATCH)";
+  return "IGNORE";
 }
 
 /**
- * SEND TELEGRAM MESSAGE
+ * TAG SYSTEM
+ */
+function tag(title) {
+  const t = title.toLowerCase();
+
+  if (t.includes("fund") || t.includes("raised")) return "💰 FUNDING";
+  if (t.includes("hire") || t.includes("job")) return "💼 HIRING";
+  if (t.includes("launch") || t.includes("beta")) return "🚀 LAUNCH";
+  if (t.includes("partnership")) return "🤝 PARTNERSHIP";
+
+  return "📊 GENERAL";
+}
+
+/**
+ * SEND ALERT
  */
 function send(item) {
   if (!item.title) return;
-  if (item.score < 1) return;
+
+  if (item.score < 4) return;
+
+  const pr = priority(item.score);
+  if (pr === "IGNORE") return;
 
   bot.sendMessage(
     CHAT_ID,
-    `🚀 BD SIGNAL (${classify(item.score)})
+    `🚀 BD INTELLIGENCE ALERT
+
+${tag(item.title)} | ${pr}
 
 📌 ${item.title}
+👤 Founder / Contact: ${item.founder}
 📊 Source: ${item.source}
-📈 Score: ${item.score}/5
+📈 Score: ${item.score}/15
+
+💡 Action:
+${pr === "P0"
+  ? "Reach out within 24h — high-value opportunity"
+  : pr === "P1"
+  ? "Prepare outreach + research founder"
+  : "Track movement"}
 
 🔗 ${item.url}`
   );
 }
 
 /**
- * MAIN SCAN LOOP
+ * MAIN LOOP
  */
 async function scan() {
   try {
@@ -59,11 +88,11 @@ async function scan() {
     fresh.forEach(send);
 
   } catch (err) {
-    console.log("Scan error:", err.message);
+    console.log("Error:", err.message);
   }
 }
 
-setInterval(scan, 5 * 60 * 1000);
+setInterval(scan, 4 * 60 * 1000);
 
-console.log("🚀 BD Intelligence Bot Running...");
+console.log("🚀 BD Intelligence Agent Running...");
 scan();
